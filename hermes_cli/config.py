@@ -1134,6 +1134,14 @@ OPTIONAL_ENV_VARS = {
         "category": "provider",
         "advanced": True,
     },
+    "GROQ_API_KEY": {
+        "description": "Groq API key for Groq-hosted OpenAI-compatible models",
+        "prompt": "Groq API key",
+        "url": "https://console.groq.com/keys",
+        "password": True,
+        "category": "provider",
+        "advanced": True,
+    },
     "XAI_API_KEY": {
         "description": "xAI API key",
         "prompt": "xAI API key",
