@@ -10,6 +10,7 @@ Usage:
 """
 
 import asyncio
+import base64
 import hmac
 import importlib.util
 import json
@@ -92,6 +93,51 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def _dashboard_basic_auth_credentials() -> Optional[tuple[str, str]]:
+    raw = os.getenv("HERMES_DASHBOARD_BASIC_AUTH", "").strip()
+    if not raw or ":" not in raw:
+        return None
+    username, password = raw.split(":", 1)
+    username = username.strip()
+    if not username or not password:
+        return None
+    return username, password
+
+
+@app.get("/healthz")
+async def healthz():
+    return {"ok": True}
+
+
+@app.middleware("http")
+async def dashboard_basic_auth_middleware(request: Request, call_next):
+    """Optional whole-dashboard Basic Auth for non-local deployments."""
+    credentials = _dashboard_basic_auth_credentials()
+    if not credentials or request.url.path == "/healthz":
+        return await call_next(request)
+
+    auth = request.headers.get("authorization", "")
+    expected_user, expected_password = credentials
+    authorized = False
+    if auth.lower().startswith("basic "):
+        try:
+            decoded = base64.b64decode(auth.split(" ", 1)[1]).decode("utf-8")
+            username, password = decoded.split(":", 1)
+            authorized = hmac.compare_digest(username, expected_user) and hmac.compare_digest(
+                password, expected_password
+            )
+        except Exception:
+            authorized = False
+
+    if not authorized:
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Unauthorized"},
+            headers={"WWW-Authenticate": 'Basic realm="Hermes Dashboard"'},
+        )
+    return await call_next(request)
 
 # ---------------------------------------------------------------------------
 # Endpoints that do NOT require the session token.  Everything else under
