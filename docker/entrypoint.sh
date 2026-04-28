@@ -86,6 +86,11 @@ if [ -d "$INSTALL_DIR/skills" ]; then
     python3 "$INSTALL_DIR/tools/skills_sync.py"
 fi
 
+if [ "${1:-}" = "dashboard-stack" ]; then
+    shift
+    exec "$INSTALL_DIR/docker/start_dashboard_stack.sh" "$@"
+fi
+
 # Final exec: two supported invocation patterns.
 #
 #   docker run <image>                 -> exec `hermes` with no args (legacy default)
