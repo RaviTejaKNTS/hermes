@@ -71,35 +71,6 @@ if [ ! -f "$HERMES_HOME/.env" ]; then
     cp "$INSTALL_DIR/.env.example" "$HERMES_HOME/.env"
 fi
 
-# Northflank and similar platforms inject secrets as process environment
-# variables. The Hermes dashboard reads the persisted ~/.hermes/.env file, so
-# mirror selected runtime-provided values into that file on startup.
-sync_runtime_env_value() {
-    key="$1"
-    value="${!key:-}"
-    if [ -z "$value" ]; then
-        return
-    fi
-    escaped_value=$(printf '%s\n' "$value" | sed -e 's/[\/&]/\\&/g')
-    if grep -q "^${key}=" "$HERMES_HOME/.env"; then
-        sed -i "s/^${key}=.*/${key}=${escaped_value}/" "$HERMES_HOME/.env"
-    else
-        printf '%s=%s\n' "$key" "$value" >> "$HERMES_HOME/.env"
-    fi
-}
-
-for key in \
-    GEMINI_API_KEY \
-    GOOGLE_API_KEY \
-    SLACK_APP_TOKEN \
-    SLACK_BOT_TOKEN \
-    SLACK_ALLOWED_USERS \
-    HERMES_INFERENCE_PROVIDER \
-    HERMES_INFERENCE_MODEL; do
-    sync_runtime_env_value "$key"
-done
-chmod 600 "$HERMES_HOME/.env" 2>/dev/null || true
-
 # config.yaml
 if [ ! -f "$HERMES_HOME/config.yaml" ]; then
     cp "$INSTALL_DIR/cli-config.yaml.example" "$HERMES_HOME/config.yaml"
