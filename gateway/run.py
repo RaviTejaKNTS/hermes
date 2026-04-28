@@ -329,9 +329,12 @@ def _resolve_runtime_agent_kwargs() -> dict:
     from hermes_cli.auth import AuthError
 
     try:
-        runtime = resolve_runtime_provider(
-            requested=os.getenv("HERMES_INFERENCE_PROVIDER"),
-        )
+        # Let runtime resolution follow the same precedence as the rest of
+        # Hermes: explicit request -> saved config -> env fallback. Passing the
+        # process env provider here caused long-lived gateway services to keep
+        # forcing a stale bootstrap provider (for example Gemini on Northflank)
+        # even after the dashboard saved a different provider in config.yaml.
+        runtime = resolve_runtime_provider(requested=None)
     except AuthError as auth_exc:
         # Primary provider auth failed (expired token, revoked key, etc.).
         # Try the fallback provider chain before raising.
