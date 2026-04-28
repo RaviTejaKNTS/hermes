@@ -709,6 +709,22 @@ def _tail_lines(path: Path, n: int) -> List[str]:
 @app.post("/api/gateway/restart")
 async def restart_gateway():
     """Kick off a ``hermes gateway restart`` in the background."""
+    if os.environ.get("HERMES_DASHBOARD_STACK") == "1":
+        restart_flag = os.environ.get("HERMES_GATEWAY_RESTART_FLAG", "").strip()
+        if not restart_flag:
+            raise HTTPException(status_code=500, detail="Gateway restart flag is not configured")
+        try:
+            Path(restart_flag).parent.mkdir(parents=True, exist_ok=True)
+            Path(restart_flag).touch()
+        except Exception as exc:
+            _log.exception("Failed to signal dashboard-stack gateway restart")
+            raise HTTPException(status_code=500, detail=f"Failed to restart gateway: {exc}")
+        return {
+            "ok": True,
+            "pid": None,
+            "name": "gateway-restart",
+            "mode": "dashboard-stack",
+        }
     try:
         proc = _spawn_hermes_action(["gateway", "restart"], "gateway-restart")
     except Exception as exc:
