@@ -1736,6 +1736,13 @@ OPTIONAL_ENV_VARS = {
         "password": True,
         "category": "messaging",
     },
+    "SLACK_ALLOWED_USERS": {
+        "description": "Comma-separated Slack user IDs allowed to use the bot",
+        "prompt": "Allowed Slack user IDs (comma-separated)",
+        "url": "https://api.slack.com/apps",
+        "password": False,
+        "category": "messaging",
+    },
     "MATTERMOST_URL": {
         "description": "Mattermost server URL (e.g. https://mm.example.com)",
         "prompt": "Mattermost server URL",
