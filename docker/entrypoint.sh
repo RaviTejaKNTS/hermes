@@ -67,13 +67,17 @@ source "${INSTALL_DIR}/.venv/bin/activate"
 mkdir -p "$HERMES_HOME"/{cron,sessions,logs,hooks,memories,skills,skins,plans,workspace,home}
 
 # .env
+fresh_env=false
 if [ ! -f "$HERMES_HOME/.env" ]; then
     cp "$INSTALL_DIR/.env.example" "$HERMES_HOME/.env"
+    fresh_env=true
 fi
 
 # config.yaml
+fresh_config=false
 if [ ! -f "$HERMES_HOME/config.yaml" ]; then
     cp "$INSTALL_DIR/cli-config.yaml.example" "$HERMES_HOME/config.yaml"
+    fresh_config=true
 fi
 
 # SOUL.md
@@ -84,6 +88,65 @@ fi
 # Sync bundled skills (manifest-based so user edits are preserved)
 if [ -d "$INSTALL_DIR/skills" ]; then
     python3 "$INSTALL_DIR/tools/skills_sync.py"
+fi
+
+# Seed first-run dashboard env from container runtime env so the dashboard can
+# manage the same values without requiring a second manual entry.
+if [ "$fresh_env" = true ] || [ "$fresh_config" = true ]; then
+    HERMES_ENV_FILE="$HERMES_HOME/.env" python3 - <<'PY'
+import json
+import os
+from pathlib import Path
+
+env_path = Path(os.environ["HERMES_ENV_FILE"])
+updates = {}
+
+for key in (
+    "GEMINI_API_KEY",
+    "SLACK_APP_TOKEN",
+    "SLACK_BOT_TOKEN",
+    "SLACK_ALLOWED_USERS",
+    "HERMES_INFERENCE_PROVIDER",
+    "HERMES_INFERENCE_MODEL",
+    "HERMES_MODEL",
+    "HERMES_DASHBOARD_BASIC_AUTH",
+):
+    value = os.environ.get(key)
+    if value:
+        updates[key] = value
+
+if updates:
+    lines = env_path.read_text().splitlines()
+    seen = set()
+    rendered = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in line:
+            rendered.append(line)
+            continue
+        key, _ = line.split("=", 1)
+        key = key.strip()
+        if key in updates:
+            rendered.append(f"{key}={json.dumps(updates[key])}")
+            seen.add(key)
+        else:
+            rendered.append(line)
+    for key, value in updates.items():
+        if key not in seen:
+            rendered.append(f"{key}={json.dumps(value)}")
+    env_path.write_text("\n".join(rendered) + "\n")
+PY
+fi
+
+# Seed first-run model config from env so gateway and dashboard start aligned.
+if [ "$fresh_config" = true ]; then
+    default_model="${HERMES_MODEL:-${HERMES_INFERENCE_MODEL:-}}"
+    if [ -n "${HERMES_INFERENCE_PROVIDER:-}" ]; then
+        hermes config set model.provider "$HERMES_INFERENCE_PROVIDER" >/dev/null
+    fi
+    if [ -n "$default_model" ]; then
+        hermes config set model.default "$default_model" >/dev/null
+    fi
 fi
 
 if [ "${1:-}" = "dashboard-stack" ]; then
