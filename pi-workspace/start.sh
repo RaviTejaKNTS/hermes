@@ -3,6 +3,13 @@ set -euo pipefail
 
 mkdir -p /workspace/.pi/agent/skills /workspace/articles /workspace/apps /workspace/bin
 
+if [ -n "${SSH_PUBLIC_KEY:-}" ]; then
+  mkdir -p /root/.ssh
+  chmod 700 /root/.ssh
+  printf '%s\n' "$SSH_PUBLIC_KEY" > /root/.ssh/authorized_keys
+  chmod 600 /root/.ssh/authorized_keys
+fi
+
 if [ ! -f /workspace/AGENTS.md ]; then
   cat > /workspace/AGENTS.md <<'EOF'
 # Pi Workspace Instructions

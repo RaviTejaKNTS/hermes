@@ -23,5 +23,6 @@ RUN chmod +x /usr/local/bin/pi-workspace-start && \
     mkdir -p /run/sshd /workspace
 
 VOLUME ["/workspace"]
+EXPOSE 22/tcp
 
 CMD ["pi-workspace-start"]
