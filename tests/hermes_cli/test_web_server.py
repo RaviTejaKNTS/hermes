@@ -1794,6 +1794,23 @@ class TestPtyWebSocket:
                 pass
         assert exc.value.code == 4401
 
+    def test_remote_clients_require_hosted_dashboard_auth(self, monkeypatch):
+        class FakeClient:
+            host = "10.1.2.3"
+
+        class FakeWebSocket:
+            client = FakeClient()
+
+        monkeypatch.delenv("HERMES_DASHBOARD_STACK", raising=False)
+        monkeypatch.delenv("HERMES_DASHBOARD_BASIC_AUTH", raising=False)
+        assert self.ws_module._chat_ws_client_allowed(FakeWebSocket()) is False
+
+        monkeypatch.setenv("HERMES_DASHBOARD_STACK", "1")
+        assert self.ws_module._chat_ws_client_allowed(FakeWebSocket()) is False
+
+        monkeypatch.setenv("HERMES_DASHBOARD_BASIC_AUTH", "admin:secret")
+        assert self.ws_module._chat_ws_client_allowed(FakeWebSocket()) is True
+
     def test_streams_child_stdout_to_client(self, monkeypatch):
         monkeypatch.setattr(
             self.ws_module,

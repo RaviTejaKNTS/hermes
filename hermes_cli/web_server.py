@@ -2343,8 +2343,8 @@ async def get_usage_analytics(days: int = 30):
 #
 # Auth: ``?token=<session_token>`` query param (browsers can't set
 # Authorization on the WS upgrade).  Same ephemeral ``_SESSION_TOKEN`` as
-# REST.  Localhost-only — we defensively reject non-loopback clients even
-# though uvicorn binds to 127.0.0.1.
+# REST.  Localhost-only by default; hosted dashboard-stack deployments may
+# opt into remote WebSocket clients when whole-dashboard Basic Auth is enabled.
 # ---------------------------------------------------------------------------
 
 import re
@@ -2365,6 +2365,23 @@ _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
 # drops AND the publisher has disconnected.
 _event_channels: dict[str, set] = {}
 _event_lock = asyncio.Lock()
+
+
+def _allow_remote_chat_ws() -> bool:
+    """True when chat WebSockets are protected by hosted-dashboard controls."""
+    return (
+        os.environ.get("HERMES_DASHBOARD_STACK") == "1"
+        and _dashboard_basic_auth_credentials() is not None
+    )
+
+
+def _chat_ws_client_allowed(ws: WebSocket) -> bool:
+    client_host = ws.client.host if ws.client else ""
+    return (
+        not client_host
+        or client_host in _LOOPBACK_HOSTS
+        or _allow_remote_chat_ws()
+    )
 
 
 def _resolve_chat_argv(
@@ -2449,8 +2466,7 @@ async def pty_ws(ws: WebSocket) -> None:
         await ws.close(code=4401)
         return
 
-    client_host = ws.client.host if ws.client else ""
-    if client_host and client_host not in _LOOPBACK_HOSTS:
+    if not _chat_ws_client_allowed(ws):
         await ws.close(code=4403)
         return
 
@@ -2557,8 +2573,7 @@ async def gateway_ws(ws: WebSocket) -> None:
         await ws.close(code=4401)
         return
 
-    client_host = ws.client.host if ws.client else ""
-    if client_host and client_host not in _LOOPBACK_HOSTS:
+    if not _chat_ws_client_allowed(ws):
         await ws.close(code=4403)
         return
 
@@ -2590,8 +2605,7 @@ async def pub_ws(ws: WebSocket) -> None:
         await ws.close(code=4401)
         return
 
-    client_host = ws.client.host if ws.client else ""
-    if client_host and client_host not in _LOOPBACK_HOSTS:
+    if not _chat_ws_client_allowed(ws):
         await ws.close(code=4403)
         return
 
@@ -2620,8 +2634,7 @@ async def events_ws(ws: WebSocket) -> None:
         await ws.close(code=4401)
         return
 
-    client_host = ws.client.host if ws.client else ""
-    if client_host and client_host not in _LOOPBACK_HOSTS:
+    if not _chat_ws_client_allowed(ws):
         await ws.close(code=4403)
         return
 
