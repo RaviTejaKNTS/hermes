@@ -45,9 +45,14 @@ RUN npm install --prefer-offline --no-audit && \
 # .dockerignore excludes node_modules, so the installs above survive.
 COPY --chown=hermes:hermes . .
 
-# Build browser dashboard and terminal UI assets.
+# Build browser dashboard and terminal UI assets. @hermes/ink is installed as a
+# local file dependency before its dist bundle exists, so sync the built bundle
+# into node_modules after the TUI build and fail the image if it is missing.
 RUN cd web && npm run build && \
-    cd ../ui-tui && npm run build
+    cd ../ui-tui && npm run build && \
+    mkdir -p node_modules/@hermes/ink/dist && \
+    cp -R packages/hermes-ink/dist/. node_modules/@hermes/ink/dist/ && \
+    test -f node_modules/@hermes/ink/dist/ink-bundle.js
 
 # ---------- Permissions ----------
 # Make install dir world-readable so any HERMES_UID can read it at runtime.
