@@ -56,10 +56,9 @@ EOF
 /usr/sbin/sshd
 
 if [ -n "${WEB_TERMINAL_AUTH:-}" ]; then
-  gotty \
+  GOTTY_CREDENTIAL="$WEB_TERMINAL_AUTH" gotty \
     --address 0.0.0.0 \
     --port "${WEB_TERMINAL_PORT:-7681}" \
-    --credential "$WEB_TERMINAL_AUTH" \
     --permit-write \
     bash -lc 'cd /workspace && exec bash -l' &
 else
