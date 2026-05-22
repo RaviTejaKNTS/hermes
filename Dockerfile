@@ -13,9 +13,11 @@ RUN apt-get update && \
 
 RUN curl -fsSL https://github.com/yudai/gotty/releases/latest/download/gotty_linux_amd64.tar.gz \
       -o /tmp/gotty.tar.gz && \
-    tar -xzf /tmp/gotty.tar.gz -C /usr/local/bin gotty && \
+    mkdir -p /tmp/gotty && \
+    tar -xzf /tmp/gotty.tar.gz -C /tmp/gotty && \
+    find /tmp/gotty -type f -name gotty -exec mv {} /usr/local/bin/gotty \; && \
     chmod +x /usr/local/bin/gotty && \
-    rm -f /tmp/gotty.tar.gz
+    rm -rf /tmp/gotty /tmp/gotty.tar.gz
 
 RUN npm install -g @earendil-works/pi-coding-agent && \
     npm cache clean --force
