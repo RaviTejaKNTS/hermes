@@ -8,8 +8,14 @@ ENV PATH=/workspace/.local/bin:/usr/local/bin:$PATH
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       bash ca-certificates curl git jq less nano openssh-client openssh-server \
-      procps ripgrep rsync sudo tmux ttyd unzip vim wget && \
+      procps ripgrep rsync sudo tmux unzip vim wget && \
     rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://github.com/yudai/gotty/releases/latest/download/gotty_linux_amd64.tar.gz \
+      -o /tmp/gotty.tar.gz && \
+    tar -xzf /tmp/gotty.tar.gz -C /usr/local/bin gotty && \
+    chmod +x /usr/local/bin/gotty && \
+    rm -f /tmp/gotty.tar.gz
 
 RUN npm install -g @earendil-works/pi-coding-agent && \
     npm cache clean --force

@@ -56,11 +56,11 @@ EOF
 /usr/sbin/sshd
 
 if [ -n "${WEB_TERMINAL_AUTH:-}" ]; then
-  ttyd \
+  gotty \
+    --address 0.0.0.0 \
     --port "${WEB_TERMINAL_PORT:-7681}" \
     --credential "$WEB_TERMINAL_AUTH" \
-    --writable \
-    --terminal-type xterm-256color \
+    --permit-write \
     bash -lc 'cd /workspace && exec bash -l' &
 else
   echo "WEB_TERMINAL_AUTH is not set; browser terminal is disabled."
