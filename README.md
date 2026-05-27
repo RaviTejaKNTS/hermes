@@ -2,6 +2,27 @@
 
 Remote OS-like workspace for running Pi Agent on Northflank.
 
+## Browser Workspace
+
+Open:
+
+```text
+https://hermes.ravitejaknts.com
+```
+
+After login, use the integrated terminal:
+
+```bash
+cd /workspace
+pi
+```
+
+Useful folders:
+
+- `/workspace/articles`
+- `/workspace/apps`
+- `/workspace/.pi/agent/skills`
+
 ## Northflank Exec
 
 ```bash

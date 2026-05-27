@@ -55,14 +55,18 @@ EOF
 
 /usr/sbin/sshd
 
-if [ -n "${WEB_TERMINAL_AUTH:-}" ]; then
-  GOTTY_CREDENTIAL="$WEB_TERMINAL_AUTH" gotty \
-    --address 0.0.0.0 \
-    --port "${WEB_TERMINAL_PORT:-7681}" \
-    --permit-write \
-    bash -lc 'cd /workspace && exec bash -l' &
+code_server_password="${CODE_SERVER_PASSWORD:-}"
+if [ -z "$code_server_password" ] && [ -n "${WEB_TERMINAL_AUTH:-}" ]; then
+  code_server_password="${WEB_TERMINAL_AUTH#*:}"
+fi
+
+if [ -n "$code_server_password" ]; then
+  PASSWORD="$code_server_password" code-server /workspace \
+    --bind-addr "0.0.0.0:${CODE_SERVER_PORT:-7681}" \
+    --auth password \
+    --disable-telemetry &
 else
-  echo "WEB_TERMINAL_AUTH is not set; browser terminal is disabled."
+  echo "CODE_SERVER_PASSWORD is not set; browser IDE is disabled."
 fi
 
 echo "Pi workspace ready."

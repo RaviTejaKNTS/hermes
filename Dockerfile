@@ -11,13 +11,8 @@ RUN apt-get update && \
       procps ripgrep rsync sudo tmux unzip vim wget && \
     rm -rf /var/lib/apt/lists/*
 
-RUN curl -fsSL https://github.com/yudai/gotty/releases/latest/download/gotty_linux_amd64.tar.gz \
-      -o /tmp/gotty.tar.gz && \
-    mkdir -p /tmp/gotty && \
-    tar -xzf /tmp/gotty.tar.gz -C /tmp/gotty && \
-    find /tmp/gotty -type f -name gotty -exec mv {} /usr/local/bin/gotty \; && \
-    chmod +x /usr/local/bin/gotty && \
-    rm -rf /tmp/gotty /tmp/gotty.tar.gz
+RUN curl -fsSL https://code-server.dev/install.sh | \
+    sh -s -- --method=standalone --prefix=/usr/local
 
 RUN npm install -g @earendil-works/pi-coding-agent && \
     npm cache clean --force
